@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Triple-Sense Live | ניטור מיכלים</title>
+    <title>Triple-Sense Live | Tank Monitoring</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -61,7 +61,7 @@
 
         .input-group {
             margin-bottom: 15px;
-            text-align: right;
+            text-align: left;
         }
 
         .input-group label {
@@ -115,13 +115,13 @@
             text-align: center;
         }
 
-        /* כרטיסי תחנות */
+        /* Station Cards */
         .station-card {
             background-color: var(--card-bg);
             border-radius: 16px;
             padding: 15px;
             margin-bottom: 15px;
-            border-right: 5px solid var(--primary);
+            border-left: 5px solid var(--primary);
         }
 
         .station-header {
@@ -143,7 +143,7 @@
             color: var(--text-muted);
         }
 
-        /* טבלאות מיכלים */
+        /* Tank Tables */
         .tank-table {
             width: 100%;
             border-collapse: collapse;
@@ -152,7 +152,7 @@
         }
 
         .tank-table th {
-            text-align: right;
+            text-align: left;
             color: var(--text-muted);
             padding-bottom: 6px;
             font-weight: 500;
@@ -199,24 +199,24 @@
 <div class="container">
     <header>
         <h1>Triple-Sense Live</h1>
-        <p>מערכת ניטור וסריקת מלאי דלק חכמה</p>
+        <p>Smart Fuel Inventory Monitoring System</p>
     </header>
 
     <div class="control-card">
         <div class="input-group">
-            <label for="usernameInput">שם משתמש</label>
-            <input type="text" id="usernameInput" class="input-field" placeholder="הכנס שם משתמש" autocomplete="off">
+            <label for="usernameInput">Username</label>
+            <input type="text" id="usernameInput" class="input-field" placeholder="Enter username" autocomplete="off">
         </div>
         
         <div class="input-group">
-            <label for="passwordInput">סיסמה</label>
-            <input type="password" id="passwordInput" class="input-field" placeholder="הכנס סיסמה" autocomplete="off">
+            <label for="passwordInput">Password</label>
+            <input type="password" id="passwordInput" class="input-field" placeholder="Enter password" autocomplete="off">
         </div>
 
-        <button onclick="loginAndGetToken()" id="loginBtn" class="btn btn-login">1. התחבר למערכת</button>
-        <button onclick="scanLastHalfHour()" id="scanBtn" class="btn btn-scan" disabled>2. שלוף נתוני מיכלים</button>
+        <button onclick="loginAndGetToken()" id="loginBtn" class="btn btn-login">1. Login to System</button>
+        <button onclick="scanLastHalfHour()" id="scanBtn" class="btn btn-scan" disabled>2. Fetch Tank Data</button>
         
-        <div id="status" class="status">נא להזין פרטים ולבצע התחברות...</div>
+        <div id="status" class="status">Please enter credentials and login...</div>
     </div>
 
     <div id="results"></div>
@@ -252,12 +252,12 @@ async function loginAndGetToken() {
     const password = document.getElementById("passwordInput").value.trim();
 
     if (!username || !password) {
-        statusDiv.innerText = "שגיאה: יש להזין שם משתמש וסיסמה!";
+        statusDiv.innerText = "Error: Username and Password are required!";
         statusDiv.style.color = "var(--danger)";
         return;
     }
 
-    statusDiv.innerText = "מתחבר לשרת...";
+    statusDiv.innerText = "Connecting to server...";
     statusDiv.style.color = "var(--warning)";
     loginBtn.disabled = true;
 
@@ -267,18 +267,18 @@ async function loginAndGetToken() {
         formData.append('password', password);
 
         const response = await fetch(`${BASE_URL}/login`, { method: 'POST', body: formData });
-        if (!response.ok) throw new Error(`שגיאה: ${response.status}`);
+        if (!response.ok) throw new Error(`Status: ${response.status}`);
 
         const data = await response.json();
         currentToken = data.session;
         currentCompanyId = data.companyID;
 
-        statusDiv.innerText = `מחובר: ${data.fullname}`;
+        statusDiv.innerText = `Connected: ${data.fullname}`;
         statusDiv.style.color = "var(--success)";
         scanBtn.disabled = false;
         loginBtn.disabled = false;
     } catch (error) {
-        statusDiv.innerText = "ההתחברות נכשלה, בדוק את הפרטים: " + error.message;
+        statusDiv.innerText = "Login failed, please check credentials: " + error.message;
         statusDiv.style.color = "var(--danger)";
         loginBtn.disabled = false;
     }
@@ -286,10 +286,10 @@ async function loginAndGetToken() {
 
 async function scanLastHalfHour() {
     const statusDiv = document.getElementById('status');
-    const GeistDiv = document.getElementById('results');
+    const resultsDiv = document.getElementById('results');
     
-    GeistDiv.innerHTML = "";
-    statusDiv.innerText = "מושך רשימת תחנות...";
+    resultsDiv.innerHTML = "";
+    statusDiv.innerText = "Fetching stations list...";
     statusDiv.style.color = "var(--warning)";
 
     try {
@@ -297,7 +297,7 @@ async function scanLastHalfHour() {
         const stationsList = await stationsResponse.json();
         
         const timePeriods = getLastHalfHourPeriods();
-        statusDiv.innerText = `סורק ${stationsList.length} תחנות בחצי שעה האחרונה...`;
+        statusDiv.innerText = `Scanning ${stationsList.length} stations over the last 30 mins...`;
 
         let activeCount = 0;
 
@@ -310,25 +310,36 @@ async function scanLastHalfHour() {
                     const sensorsResponse = await fetch(`${BASE_URL}/sensors?session_token=${currentToken}&station=${stationId}&period=${period}`);
                     if (sensorsResponse.ok) {
                         const resData = await sensorsResponse.json();
+                        
                         if (resData && resData.id && resData.numberOfSensors > 0) {
                             
-                            if (resData.levelSensor1 === 0 && resData.volume1 === 0 && resData.temperature1 === 0) {
-                                continue; 
+                            // Check if there is at least one sensor that is NOT null or undefined (0 is perfectly valid)
+                            let hasValidData = false;
+                            for (let i = 1; i <= resData.numberOfSensors; i++) {
+                                const vol = resData[`volume${i}`];
+                                const lvl = resData[`levelSensor${i}`];
+                                
+                                if ((vol !== undefined && vol !== null) || (lvl !== undefined && lvl !== null)) {
+                                    hasValidData = true;
+                                    break;
+                                }
                             }
 
-                            activeCount++;
-                            renderStationCard(stationName, resData);
-                            break;
+                            if (hasValidData) {
+                                activeCount++;
+                                renderStationCard(stationName, resData);
+                                break;
+                            }
                         }
                     }
                 } catch (e) {}
             }
         }));
 
-        statusDiv.innerText = `הסריקה הושלמה! נמצאו ${activeCount} תחנות משדרות.`;
+        statusDiv.innerText = `Scan completed! Found ${activeCount} active stations.`;
         statusDiv.style.color = "var(--success)";
     } catch (error) {
-        statusDiv.innerText = "שגיאה בסריקה: " + error.message;
+        statusDiv.innerText = "Scan error: " + error.message;
         statusDiv.style.color = "var(--danger)";
     }
 }
@@ -336,51 +347,69 @@ async function scanLastHalfHour() {
 function renderStationCard(name, data) {
     const resultsDiv = document.getElementById('results');
     
-    let html = `
-        <div class="station-card">
-            <div class="station-header">
-                <div class="station-title">${name}</div>
-                <div class="station-time">${data.created}</div>
-            </div>
-            <table class="tank-table">
-                <thead>
-                    <tr>
-                        <th>מיכל / מוצר</th>
-                        <th style="text-align: left;">נפח נוכחי / מירבי</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+    let tableRowsHtml = "";
+    let validRowsCount = 0;
 
     for (let i = 1; i <= data.numberOfSensors; i++) {
-        const tankName = data[`tankName${i}`] || `מיכל ${i}`;
-        const volume = data[`volume${i}`] || 0;
+        const volume = data[`volume${i}`];
+        const level = data[`levelSensor${i}`];
         const maxLevel = data[`maxLevel${i}`] || 0;
-        const product = data[`product${i}`] || 'לא ידוע';
-        const temp = data[`temperature${i}`] !== undefined ? `${data[`temperature${i}`]}°C` : '';
+        const product = data[`product${i}`] || 'Unknown';
+        const temp = data[`temperature${i}`];
+        const tankName = data[`tankName${i}`] || `Tank ${i}`;
 
-        const pct = maxLevel > 0 ? Math.min(Math.round((volume / maxLevel) * 100), 100) : 0;
+        // Only skip if the data is strictly null or undefined
+        if ((volume === null || volume === undefined) && (level === null || level === undefined)) {
+            continue;
+        }
+
+        validRowsCount++;
+        
+        // Secure assignment: 0 remains 0
+        const displayVolume = (volume !== undefined && volume !== null) ? volume : 0;
+        const displayTemp = (temp !== undefined && temp !== null) ? `${temp}°C` : '--°C';
+        const pct = maxLevel > 0 ? Math.min(Math.round((displayVolume / maxLevel) * 100), 100) : 0;
         const badgeClass = product.toLowerCase().includes('pms') || product.toLowerCase().includes('unleaded') ? 'badge-pms' : 'badge-diesel';
 
-        html += `
+        tableRowsHtml += `
             <tr>
-                <td>
+                <td style="text-align: left;">
                     <span class="badge ${badgeClass}">${product}</span> <strong>${tankName}</strong>
-                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">טמפרטורה: ${temp}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Temperature: ${displayTemp}</div>
                 </td>
-                <td style="text-align: left; vertical-align: top;">
-                    <div><strong>${Number(volume).toLocaleString()}</strong> / <span style="color: var(--text-muted);">${Number(maxLevel).toLocaleString()} L</span></div>
+                <td style="text-align: right; vertical-align: top;">
+                    <div><strong>${Number(displayVolume).toLocaleString()}</strong> / <span style="color: var(--text-muted);">${Number(maxLevel).toLocaleString()} L</span></div>
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${pct}%; background-color: ${pct < 20 ? 'var(--danger)' : pct < 50 ? 'var(--warning)' : 'var(--success)'}"></div>
                     </div>
-                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">קיבולת: ${pct}%</div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Capacity: ${pct}%</div>
                 </td>
             </tr>
         `;
     }
 
-    html += `</tbody></table></div>`;
-    resultsDiv.innerHTML += html;
+    if (validRowsCount > 0) {
+        let html = `
+            <div class="station-card">
+                <div class="station-header">
+                    <div class="station-title">${name}</div>
+                    <div class="station-time">${data.created}</div>
+                </div>
+                <table class="tank-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Tank / Product</th>
+                            <th style="text-align: right;">Current / Max Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        resultsDiv.innerHTML += html;
+    }
 }
 </script>
 
