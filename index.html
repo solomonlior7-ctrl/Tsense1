@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triple-Sense Live | ניטור מיכלים</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --input-bg: #334155;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin: 5px 0;
+            color: var(--primary);
+        }
+
+        header p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .control-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: right;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: var(--input-bg);
+            border: 1px solid #475569;
+            border-radius: 10px;
+            color: var(--text-main);
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .btn-login { background-color: #2563eb; color: white; }
+        .btn-scan { background-color: #16a34a; color: white; }
+        .btn:disabled { background-color: #475569; color: var(--text-muted); cursor: not-allowed; }
+
+        .status {
+            font-size: 14px;
+            margin-top: 15px;
+            font-weight: 500;
+            color: var(--warning);
+            text-align: center;
+        }
+
+        /* כרטיסי תחנות */
+        .station-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-right: 5px solid var(--primary);
+        }
+
+        .station-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 8px;
+        }
+
+        .station-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .station-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* טבלאות מיכלים */
+        .tank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .tank-table th {
+            text-align: right;
+            color: var(--text-muted);
+            padding-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .tank-table td {
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #334155;
+            border-radius: 6px;
+            height: 12px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            background-color: #334155;
+        }
+        .badge-pms { color: #f43f5e; background: #881337; }
+        .badge-diesel { color: #34d399; background: #064e3b; }
+
+        #results {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Triple-Sense Live</h1>
+        <p>מערכת ניטור וסריקת מלאי דלק חכמה</p>
+    </header>
+
+    <div class="control-card">
+        <div class="input-group">
+            <label for="usernameInput">שם משתמש</label>
+            <input type="text" id="usernameInput" class="input-field" placeholder="הכנס שם משתמש" autocomplete="off">
+        </div>
+        
+        <div class="input-group">
+            <label for="passwordInput">סיסמה</label>
+            <input type="password" id="passwordInput" class="input-field" placeholder="הכנס סיסמה" autocomplete="off">
+        </div>
+
+        <button onclick="loginAndGetToken()" id="loginBtn" class="btn btn-login">1. התחבר למערכת</button>
+        <button onclick="scanLastHalfHour()" id="scanBtn" class="btn btn-scan" disabled>2. שלוף נתוני מיכלים</button>
+        
+        <div id="status" class="status">נא להזין פרטים ולבצע התחברות...</div>
+    </div>
+
+    <div id="results"></div>
+</div>
+
+<script>
+const BASE_URL = "https://services.triple-sense.com:7455/tsense-rest";
+
+let currentToken = "";
+let currentCompanyId = "";
+
+function getLastHalfHourPeriods() {
+    const periods = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+        const checkTime = new Date(now.getTime() - (i * 5 * 60 * 1000));
+        const year = checkTime.getFullYear();
+        const month = String(checkTime.getMonth() + 1).padStart(2, '0');
+        const day = String(checkTime.getDate()).padStart(2, '0');
+        const hours = String(checkTime.getHours()).padStart(2, '0');
+        const minutes = String(checkTime.getMinutes()).padStart(2, '0');
+        periods.push(`${year}${month}${day}${hours}${minutes}00`);
+    }
+    return periods;
+}
+
+async function loginAndGetToken() {
+    const statusDiv = document.getElementById('status');
+    const loginBtn = document.getElementById('loginBtn');
+    const scanBtn = document.getElementById('scanBtn');
+    
+    const username = document.getElementById("usernameInput").value.trim();
+    const password = document.getElementById("passwordInput").value.trim();
+
+    if (!username || !password) {
+        statusDiv.innerText = "שגיאה: יש להזין שם משתמש וסיסמה!";
+        statusDiv.style.color = "var(--danger)";
+        return;
+    }
+
+    statusDiv.innerText = "מתחבר לשרת...";
+    statusDiv.style.color = "var(--warning)";
+    loginBtn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        const response = await fetch(`${BASE_URL}/login`, { method: 'POST', body: formData });
+        if (!response.ok) throw new Error(`שגיאה: ${response.status}`);
+
+        const data = await response.json();
+        currentToken = data.session;
+        currentCompanyId = data.companyID;
+
+        statusDiv.innerText = `מחובר: ${data.fullname}`;
+        statusDiv.style.color = "var(--success)";
+        scanBtn.disabled = false;
+        loginBtn.disabled = false;
+    } catch (error) {
+        statusDiv.innerText = "ההתחברות נכשלה, בדוק את הפרטים: " + error.message;
+        statusDiv.style.color = "var(--danger)";
+        loginBtn.disabled = false;
+    }
+}
+
+async function scanLastHalfHour() {
+    const statusDiv = document.getElementById('status');
+    const GeistDiv = document.getElementById('results');
+    
+    GeistDiv.innerHTML = "";
+    statusDiv.innerText = "מושך רשימת תחנות...";
+    statusDiv.style.color = "var(--warning)";
+
+    try {
+        const stationsResponse = await fetch(`${BASE_URL}/stations?session_token=${currentToken}&company=${currentCompanyId}`);
+        const stationsList = await stationsResponse.json();
+        
+        const timePeriods = getLastHalfHourPeriods();
+        statusDiv.innerText = `סורק ${stationsList.length} תחנות בחצי שעה האחרונה...`;
+
+        let activeCount = 0;
+
+        await Promise.all(stationsList.map(async (station) => {
+            const stationId = station.id || station.station_id || station.station;
+            const stationName = station.name || stationId;
+
+            for (const period of timePeriods) {
+                try {
+                    const sensorsResponse = await fetch(`${BASE_URL}/sensors?session_token=${currentToken}&station=${stationId}&period=${period}`);
+                    if (sensorsResponse.ok) {
+                        const resData = await sensorsResponse.json();
+                        if (resData && resData.id && resData.numberOfSensors > 0) {
+                            
+                            if (resData.levelSensor1 === 0 && resData.volume1 === 0 && resData.temperature1 === 0) {
+                                continue; 
+                            }
+
+                            activeCount++;
+                            renderStationCard(stationName, resData);
+                            break;
+                        }
+                    }
+                } catch (e) {}
+            }
+        }));
+
+        statusDiv.innerText = `הסריקה הושלמה! נמצאו ${activeCount} תחנות משדרות.`;
+        statusDiv.style.color = "var(--success)";
+    } catch (error) {
+        statusDiv.innerText = "שגיאה בסריקה: " + error.message;
+        statusDiv.style.color = "var(--danger)";
+    }
+}
+
+function renderStationCard(name, data) {
+    const resultsDiv = document.getElementById('results');
+    
+    let html = `
+        <div class="station-card">
+            <div class="station-header">
+                <div class="station-title">${name}</div>
+                <div class="station-time">${data.created}</div>
+            </div>
+            <table class="tank-table">
+                <thead>
+                    <tr>
+                        <th>מיכל / מוצר</th>
+                        <th style="text-align: left;">נפח נוכחי / מירבי</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    for (let i = 1; i <= data.numberOfSensors; i++) {
+        const tankName = data[`tankName${i}`] || `מיכל ${i}`;
+        const volume = data[`volume${i}`] || 0;
+        const maxLevel = data[`maxLevel${i}`] || 0;
+        const product = data[`product${i}`] || 'לא ידוע';
+        const temp = data[`temperature${i}`] !== undefined ? `${data[`temperature${i}`]}°C` : '';
+
+        const pct = maxLevel > 0 ? Math.min(Math.round((volume / maxLevel) * 100), 100) : 0;
+        const badgeClass = product.toLowerCase().includes('pms') || product.toLowerCase().includes('unleaded') ? 'badge-pms' : 'badge-diesel';
+
+        html += `
+            <tr>
+                <td>
+                    <span class="badge ${badgeClass}">${product}</span> <strong>${tankName}</strong>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">טמפרטורה: ${temp}</div>
+                </td>
+                <td style="text-align: left; vertical-align: top;">
+                    <div><strong>${Number(volume).toLocaleString()}</strong> / <span style="color: var(--text-muted);">${Number(maxLevel).toLocaleString()} L</span></div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${pct}%; background-color: ${pct < 20 ? 'var(--danger)' : pct < 50 ? 'var(--warning)' : 'var(--success)'}"></div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">קיבולת: ${pct}%</div>
+                </td>
+            </tr>
+        `;
+    }
+
+    html += `</tbody></table></div>`;
+    resultsDiv.innerHTML += html;
+}
+</script>
+
+</body>
+</html>
